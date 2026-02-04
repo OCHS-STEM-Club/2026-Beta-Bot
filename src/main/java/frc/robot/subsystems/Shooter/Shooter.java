@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.Shooter;
 
+import java.nio.charset.CharacterCodingException;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -17,8 +19,13 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.Drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Intake.IntakeConstants;
+import frc.robot.subsystems.Intake.IntakeState;
+import frc.robot.Constants.PoseConstants;
 
 public class Shooter extends SubsystemBase {
   private TalonFX shooterMotor;
@@ -32,7 +39,17 @@ public class Shooter extends SubsystemBase {
 
   private CommandSwerveDrivetrain m_swerveSubsystem;
 
-  public Shooter() {
+  private double m_blueHubDistance = 0.0;
+  private double m_redHubDistance = 0.0;
+
+  private double m_blueDepotShuttlingDistance = 0.0;
+  private double m_blueOutpostShuttlingDistance = 0.0;
+  
+  private double m_redDepotShuttlingDistance = 0.0;
+  private double m_redOutpostShuttlingDistance = 0.0;
+
+  public Shooter(CommandSwerveDrivetrain swerveSubsystem) {
+    this.m_swerveSubsystem = swerveSubsystem;
     shooterMotor = new TalonFX(ShooterConstants.kMotorId);
 
     shooterConfig = new TalonFXConfiguration()
@@ -47,16 +64,15 @@ public class Shooter extends SubsystemBase {
                                     .withMotionMagicCruiseVelocity(ShooterConstants.kCruiseVelocity)
                                     .withMotionMagicAcceleration(ShooterConstants.kAcceleration)
                                     .withMotionMagicJerk(ShooterConstants.kJerk))
-                    .withFeedback(new FeedbackConfigs()
-                                  .withSensorToMechanismRatio(ShooterConstants.kSensorToMechRatio)
-                                  .withRotorToSensorRatio(ShooterConstants.kRotorToSensorRatio))
                     .withCurrentLimits(new CurrentLimitsConfigs()
                                     .withSupplyCurrentLimit(ShooterConstants.kSupplyCurrentLimit));
     shooterMotor.getConfigurator().apply(shooterConfig);
 
     m_voltageRequest = new VoltageOut(0);
 
-    m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(0);
+    m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(ShooterConstants.kFeedforward);
+
+    ShooterConstants.setupShooterMap();
   }
 
   @Override
@@ -65,16 +81,104 @@ public class Shooter extends SubsystemBase {
     logMotorData();
   }
 
-  public void setShooterVelocity() {
-    m_motionRequest.Velocity = 1;
+  public void setGoal(ShooterState desiredState) {
+    currentState = desiredState;
+    Translation2d currentTranslation2d = m_swerveSubsystem.getState().Pose.getTranslation();
+    switch (desiredState) {
+      case SHOOT_BLUE_HUB:
+        m_blueHubDistance = currentTranslation2d.getDistance(PoseConstants.BLUE_HUB.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_blueHubDistance));
+        break;
+      case SHOOT_BLUE_DEPOT_SHUTTLING:
+        m_blueDepotShuttlingDistance = currentTranslation2d.getDistance(PoseConstants.BLUE_DEPOT_SHUTTLING.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_blueDepotShuttlingDistance));
+        break;
+      case SHOOT_BLUE_OUTPOST_SHUTTLING:
+        m_blueOutpostShuttlingDistance = currentTranslation2d.getDistance(PoseConstants.BLUE_OUTPOST_SHUTTLING.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_blueOutpostShuttlingDistance));
+        break;
+      case SHOOT_RED_HUB:
+        m_redHubDistance = currentTranslation2d.getDistance(PoseConstants.RED_HUB.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_redOutpostShuttlingDistance));
+        break;
+      case SHOOT_RED_DEPOT_SHUTTLING:
+        m_redDepotShuttlingDistance = currentTranslation2d.getDistance(PoseConstants.RED_DEPOT_SHUTTLING.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_blueDepotShuttlingDistance));
+        break;
+      case SHOOT_RED_OUTPOST_SHUTTLING:
+        m_redOutpostShuttlingDistance = currentTranslation2d.getDistance(PoseConstants.RED_OUTPOST_SHUTTLING.getTranslation());
+        setShooterVelocity(ShooterConstants.kShooterMap.get(m_redOutpostShuttlingDistance));
+        break;
+      case IDLE:
+        setShooterVelocity(ShooterConstants.kPrepSpeed);
+        break;
+      case STOP:
+        shooterMotor.stopMotor();
+        break;  
+    }
   }
 
-  private void logMotorData() {
-    DogLog.log("Subsystem/Shooter/ShooterState", currentState.name());
+  public void autoGoal() {
+    // Get current robot position
+    double xPose = m_swerveSubsystem.getState().Pose.getX();
+    double yPose = m_swerveSubsystem.getState().Pose.getY();
 
-    DogLog.log("Subsystem/Shooter/ShooterMotorVelocity", shooterMotor.getVelocity().getValueAsDouble());
-    DogLog.log("Subsystem/Shooter/ShooterMotorSupplyCurrent", shooterMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystem/Shooter/ShooterMotorStatorCurrent", shooterMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystem/Shooter/ShooterMotorVoltage", shooterMotor.getMotorVoltage().getValueAsDouble());
+    // Get alliance color
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isPresent()) {
+      ShooterState targetState;
+    }
+
+    if (alliance.get() == Alliance.Blue) {
+      if (xPose > PoseConstants.kBlueAllianceZoneLineX) {
+        // In shuttling zone - choose depot or outpost based on Y position
+        targetState = (yPose > PoseConstants.kFieldMidlineY)
+            ? ShooterState.SHOOT_BLUE_DEPOT_SHUTTLING
+            : ShooterState.SHOOT_BLUE_HUB;
+      } else {
+        targetState = ShooterState.SHOOT_BLUE_HUB;
+        }
+      // We stopped here
+    }
+  }
+
+  public void setShooterVelocity(double velocity) {
+    shooterMotor.setControl(m_motionRequest.withVelocity(velocity));
+  }
+
+  public void shooterOn() {
+    shooterMotor.set(ShooterConstants.kMotorSpeed);
+  }
+
+  public void shooterReverse() {
+    shooterMotor.set(ShooterConstants.kMotorReverseSpeed);
+  }
+
+  public void shooterOff() {
+    shooterMotor.stopMotor();
+  }
+
+  public boolean isAtSetpoint() {
+    return Math.abs(shooterMotor.getVelocity().getValueAsDouble() - m_motionRequest.Velocity) <= ShooterConstants.kVelocityTolerance;
+  }
+  
+  private void logMotorData() {
+    DogLog.log("Subsystems/Shooter/ShooterState", currentState.name());
+
+    DogLog.log("Subsystems/Shooter/Basic/ShooterMotorVelocity", shooterMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Shooter/Position/ShooterSetpoint", m_motionRequest.Velocity);
+    DogLog.log("Subsystems/Shooter/Position/IsAtSetpoint", Math.abs(shooterMotor.getVelocity().getValueAsDouble() - m_motionRequest.Velocity) <= ShooterConstants.kVelocityTolerance);
+
+    DogLog.log("Subsystems/Shooter/Basic/ShooterMotorSupplyCurrent", shooterMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Shooter/Basic/ShooterMotorStatorCurrent", shooterMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Shooter/Basic/ShooterMotorVoltage", shooterMotor.getMotorVoltage().getValueAsDouble());
+
+    DogLog.log("Subsystems/Shooter/Tracking/Blue/HubDistance", m_blueHubDistance);
+    DogLog.log("Subsystems/Shooter/Tracking/Blue/DepotShuttlingDistance", m_blueDepotShuttlingDistance);
+    DogLog.log("Subsystems/Shooter/Tracking/Blue/OutpostShuttlingDistance", m_blueOutpostShuttlingDistance);
+
+    DogLog.log("Subsystems/Shooter/Tracking/Red/HubDistance", m_redHubDistance);
+    DogLog.log("Subsystems/Shooter/Tracking/Red/DepotShuttlingDistance", m_redDepotShuttlingDistance);
+    DogLog.log("Subsystems/Shooter/Tracking/Red/OutpostShuttlingDistance", m_redOutpostShuttlingDistance);
   }
 }
