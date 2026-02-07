@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems.Shooter;
 
-import java.util.TreeMap;
-
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 
 /** Add your docs here. */
@@ -22,9 +20,6 @@ public class ShooterConstants {
     public static final int kAcceleration = 1000;
     public static final int kJerk = 1000;
 
-    public static final int kSensorToMechRatio = 1;
-    public static final int kRotorToSensorRatio = 1;
-
     public static final double kFeedforward = 0.0;
 
     public static final double kVelocityTolerance = 0.01;
@@ -32,7 +27,6 @@ public class ShooterConstants {
     public static final double kPrepSpeed = 0.25;
 
     public static final double kMotorSpeed = 1;
-    public static final double kMotorReverseSpeed = -kMotorSpeed;
 
     public static InterpolatingDoubleTreeMap kShooterMap = new InterpolatingDoubleTreeMap(); //may need to change data types
 

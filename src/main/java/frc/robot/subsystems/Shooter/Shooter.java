@@ -36,7 +36,7 @@ public class Shooter extends SubsystemBase {
   private MotionMagicVelocityVoltage m_motionRequest;
   private VoltageOut m_voltageRequest;
 
-  private ShooterState currentState = ShooterState.IDLE;
+  private ShooterState currentState = ShooterState.STOP;
   private boolean autoGoalEnabled = false;
 
   private CommandSwerveDrivetrain m_swerveSubsystem;
@@ -80,6 +80,9 @@ public class Shooter extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    if (autoGoalEnabled) {
+      autoGoal();
+    }
     logMotorData();
   }
 
@@ -134,22 +137,22 @@ public class Shooter extends SubsystemBase {
         if (xPose > PoseConstants.kBlueAllianceZoneLineX) {
           // In shuttling zone - choose depot or outpost based on Y position
           targetState = (yPose > PoseConstants.kFieldMidlineY)
-            ? ShooterState.BLUE_OUTPOST_SHUTTLING
-            : ShooterState.BLUE_DEPOT_SHUTTLING;
+            ? ShooterState.BLUE_DEPOT_SHUTTLING
+            : ShooterState.BLUE_OUTPOST_SHUTTLING;
         } else {
           targetState = ShooterState.BLUE_HUB;
         }
-      }
-      if (alliance.get() == Alliance.Red) {
+      } else {
         if (xPose < PoseConstants.kRedAllianceZoneLineX) {
           // In shuttling zone - choose depot or outpost based on Y position
-          targetState = (yPose < PoseConstants.kFieldMidlineY)
+          targetState = (yPose > PoseConstants.kFieldMidlineY)
             ? ShooterState.RED_OUTPOST_SHUTTLING
             : ShooterState.RED_DEPOT_SHUTTLING;
         } else {
           targetState = ShooterState.RED_HUB;
         }
       }
+      setGoal(targetState);
     }
   }
 
@@ -162,11 +165,15 @@ public class Shooter extends SubsystemBase {
   }
 
   public void shooterReverse() {
-    shooterMotor.set(ShooterConstants.kMotorReverseSpeed);
+    shooterMotor.set(-ShooterConstants.kMotorSpeed);
   }
 
   public void shooterOff() {
     shooterMotor.stopMotor();
+  }
+
+  public void setAutoGoalEnabled(boolean enabled) {
+    autoGoalEnabled = enabled;
   }
 
   public boolean isAtSetpoint() {

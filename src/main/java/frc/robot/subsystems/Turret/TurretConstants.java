@@ -12,6 +12,18 @@ public class TurretConstants {
     public static final double kI = 1;
     public static final double kD = 1;
 
-    public static final double kMotorSpeed = 1;
-    public static final double kMotorReverseSpeed = -kMotorSpeed;
+    public static final double kCruiseVelocity = 1;
+    public static final double kAcceleration = 1;
+    public static final double kJerk = 1;
+
+    public static final double kTurretTransformInchesX = 1;
+    public static final double kTurretTransformInchesY = 10;
+
+    public static final double kFeedforward = 0.0;
+    
+    public static final double kVelocityTolerance = 0.01;
+
+    public static final double kSupplyCurrentLimit = 20;
+
+    public static final double kSpeed = 1;
 }
