@@ -8,7 +8,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 
 /** Add your docs here. */
 public class ShooterConstants {
-    public static final int kMotorId = 1;
+    public static final int kMotorId = 23;
 
     public static final int kSupplyCurrentLimit = 15;
 

@@ -18,8 +18,6 @@ import com.ctre.phoenix6.signals.UpdateModeValue;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Intake.IntakeConstants;
-import frc.robot.subsystems.Intake.IntakeState;
 
 public class Indexer extends SubsystemBase {
 
@@ -63,6 +61,7 @@ public class Indexer extends SubsystemBase {
                                               .withProximityThreshold(0))
                         .withToFParams(new ToFParamsConfigs()
                                               .withUpdateMode(UpdateModeValue.ShortRange100Hz));
+    indexerSensor.getConfigurator().apply(indexerSensorConfig);
   }
 
   @Override
@@ -111,7 +110,7 @@ public class Indexer extends SubsystemBase {
     DogLog.log("Subsystems/Indexer/IndexerMotorStatorCurrent", indexerMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Subsystems/Indexer/IndexerMotorVoltage", indexerMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Susbsytems/Indexer/IndexerSensor", indexerSensor.getIsDetected().getValue());
+    DogLog.log("Subsystems/Indexer/IndexerSensor", indexerSensor.getIsDetected().getValue());
   }
 
   @Override

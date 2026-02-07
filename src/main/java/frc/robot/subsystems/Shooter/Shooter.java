@@ -4,11 +4,12 @@
 
 package frc.robot.subsystems.Shooter;
 
-import java.nio.charset.CharacterCodingException;
+import static edu.wpi.first.units.Units.*;
+
 import java.util.Optional;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -23,10 +24,10 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.subsystems.Drive.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Intake.IntakeConstants;
-import frc.robot.subsystems.Intake.IntakeState;
 import frc.robot.Constants.PoseConstants;
 
 public class Shooter extends SubsystemBase {
@@ -75,6 +76,27 @@ public class Shooter extends SubsystemBase {
     m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(ShooterConstants.kFeedforward);
 
     ShooterConstants.setupShooterMap();
+  }
+
+  private final SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
+    new SysIdRoutine.Config(
+      null,
+      Volts.of(4),
+      Seconds.of(10),
+      (state) -> SignalLogger.writeString("Shooter State", state.toString())
+      ),
+      new SysIdRoutine.Mechanism(
+      (volts) -> shooterMotor.setControl(m_voltageRequest.withOutput(volts.in(Volts))),
+      null,
+      this)
+    );
+
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutine.quasistatic(direction);
+  }
+
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutine.dynamic(direction);
   }
 
   @Override

@@ -4,35 +4,41 @@
 
 package frc.robot.subsystems.Turret;
 
+import static edu.wpi.first.units.Units.*;
+
 import java.util.Optional;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.PoseConstants;
 import frc.robot.subsystems.Drive.CommandSwerveDrivetrain;
 
 public class Turret extends SubsystemBase {
   private TalonFX turretMotor;
-  private TalonFXConfiguration turretMotorConfig;
+  private TalonFXConfiguration turretConfig;
 
-  private MotionMagicVelocityVoltage m_motionRequest;
+  private MotionMagicVoltage m_motionRequest;
   private VoltageOut m_voltageRequest;
 
   private double m_robotRelativeAngle;
@@ -44,9 +50,10 @@ public class Turret extends SubsystemBase {
 
   /** Creates a new Turret. */
   public Turret(CommandSwerveDrivetrain swerveSubsystem) {
+    m_swerveSubsystem = swerveSubsystem;
     turretMotor = new TalonFX(TurretConstants.kMotorId);
 
-    turretMotorConfig = new TalonFXConfiguration()
+    turretConfig = new TalonFXConfiguration()
                         .withMotorOutput(new MotorOutputConfigs()
                                           .withInverted(InvertedValue.Clockwise_Positive)
                                           .withNeutralMode(NeutralModeValue.Brake))
@@ -61,13 +68,13 @@ public class Turret extends SubsystemBase {
                         .withCurrentLimits(new CurrentLimitsConfigs()
                                         .withSupplyCurrentLimit(TurretConstants.kSupplyCurrentLimit));
     
-    turretMotor.getConfigurator().apply(turretMotorConfig);
+    turretMotor.getConfigurator().apply(turretConfig);
 
-    m_swerveSubsystem = swerveSubsystem;
+    
 
     m_voltageRequest = new VoltageOut(0);
 
-    m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(TurretConstants.kFeedforward);
+    m_motionRequest = new MotionMagicVoltage(0).withSlot(0).withFeedForward(TurretConstants.kFeedforward);
   }
 
   public void setGoal(TurretState desiredState) {
@@ -143,7 +150,8 @@ public class Turret extends SubsystemBase {
   }
 
   public void setPivotPosition(double position) {
-    turretMotor.setControl(m_voltageRequest.withOutput(position));
+    double moddedPosition = MathUtil.inputModulus(position, TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
+    turretMotor.setControl(m_motionRequest.withPosition(moddedPosition));
   }
 
   public void turretTrackPose(Pose2d target) {
@@ -175,28 +183,50 @@ public class Turret extends SubsystemBase {
     this.setPivotPosition(robotRelativeAngle.getDegrees());
   }
 
+  private final SysIdRoutine m_sysIdRoutine = 
+    new SysIdRoutine(
+      new SysIdRoutine.Config(
+        null,
+        Volts.of(4),
+        Seconds.of(10),
+        (state) -> SignalLogger.writeString("Turret State", state.toString())
+      ),
+      new SysIdRoutine.Mechanism(
+        (volts) -> turretMotor.setControl(m_voltageRequest.withOutput(volts.in(Volts))),
+        null,
+        this
+      )
+  );
+
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutine.quasistatic(direction);
+  }
+
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutine.dynamic(direction);
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    autoGoal();
+    //autoGoal();
     logMotorData();
   }
-
 
   public void logMotorData() {
     DogLog.log("Subsystems/Turret/TurretState", currentState.name());
     
     DogLog.log("Subsystems/Turret/PivotPosition", turretMotor.getPosition().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/PivotSetpoint", m_motionRequest.Velocity);
-    DogLog.log("Subsystems/Turret/IsAtSetpoint", Math.abs(turretMotor.getPosition().getValueAsDouble() - m_motionRequest.Velocity) <= TurretConstants.kVelocityTolerance);
-    DogLog.log("Subsystems/Turret/Velocity", turretMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/PivotSetpoint", m_motionRequest.Position);
+    DogLog.log("Subsystems/Turret/IsAtSetpoint", Math.abs(turretMotor.getPosition().getValueAsDouble() - m_motionRequest.Position) <= TurretConstants.kTolerance);
 
-    DogLog.log("Subsystems/Turret/SupplyCurrent", turretMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/StatorCurrent", turretMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/Voltage", turretMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/PivotVelocity", turretMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/PivotSupplyCurrent", turretMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/PivotStatorCurrent", turretMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/PivotVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
 
     DogLog.log("Subsystems/Turret/RobotRelativeAngle", m_robotRelativeAngle);
     DogLog.log("Subsystems/Turret/FieldRelativeAngle", m_fieldRelativeAngle);
-    DogLog.log("Subsystems/Turret/TurretPose", m_swerveSubsystem.getState().Pose.getRotation());
+    DogLog.log("Subsystems/Turret/TurretPose", new Pose2d(m_swerveSubsystem.getState().Pose.getTranslation(), Rotation2d.fromDegrees(m_fieldRelativeAngle)));
   }
 }

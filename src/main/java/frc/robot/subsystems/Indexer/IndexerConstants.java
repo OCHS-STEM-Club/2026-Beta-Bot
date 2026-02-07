@@ -6,8 +6,8 @@ package frc.robot.subsystems.Indexer;
 
 /** Add your docs here. */
 public class IndexerConstants {
-    public static final int kIndexerMotorId = 1;
-    public static final int kSpindexerMotorId = 2;
+    public static final int kIndexerMotorId = 20;
+    public static final int kSpindexerMotorId = 19;
 
     public static final int kIndexerSupplyCurrentLimit = 15;
 

@@ -6,7 +6,10 @@ package frc.robot.subsystems.Turret;
 
 /** Add your docs here. */
 public class TurretConstants {
-    public static final int kMotorId = 1;
+    public static final int kMotorId = 22;
+
+    public static final double kMinAngle = -180;
+    public static final double kMaxAngle = 180;
 
     public static final double kP = 1;
     public static final double kI = 1;
@@ -21,7 +24,7 @@ public class TurretConstants {
 
     public static final double kFeedforward = 0.0;
     
-    public static final double kVelocityTolerance = 0.01;
+    public static final double kTolerance = 0.01;
 
     public static final double kSupplyCurrentLimit = 20;
 
