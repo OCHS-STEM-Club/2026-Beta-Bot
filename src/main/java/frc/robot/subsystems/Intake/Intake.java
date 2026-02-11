@@ -61,10 +61,10 @@ public class Intake extends SubsystemBase {
 
   private void logMotorData(){
     DogLog.log("Subsystems/Intake/IntakeState", currentState.name());
-    DogLog.log("Subsystems/Intake/RollerMotorVelocity", rollerMotor.getVelocity().getValueAsDouble());
-    DogLog.log("Subsystems/Intake/RollerMotorSupplyCurrent", rollerMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Intake/RollerMotorStatorCurrent", rollerMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Intake/RollerMotorVoltage", rollerMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Subsystems/Intake/Basic/RollerMotorVelocity", rollerMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Intake/Basic/RollerMotorSupplyCurrent", rollerMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Intake/Basic/RollerMotorStatorCurrent", rollerMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Intake/Basic/RollerMotorVoltage", rollerMotor.getMotorVoltage().getValueAsDouble());
   }
 
   @Override

@@ -57,8 +57,8 @@ public class Indexer extends SubsystemBase {
 
     indexerSensorConfig = new CANrangeConfiguration()
                         .withProximityParams(new ProximityParamsConfigs()
-                                              .withMinSignalStrengthForValidMeasurement(0)
-                                              .withProximityThreshold(0))
+                                              .withMinSignalStrengthForValidMeasurement(IndexerConstants.kIndexerSensorMinSignalStrength)
+                                              .withProximityThreshold(IndexerConstants.kIndexerSensorProximityThreshold))
                         .withToFParams(new ToFParamsConfigs()
                                               .withUpdateMode(UpdateModeValue.ShortRange100Hz));
     indexerSensor.getConfigurator().apply(indexerSensorConfig);
@@ -100,17 +100,17 @@ public class Indexer extends SubsystemBase {
   private void logMotorData(){
     DogLog.log("Subsystems/Indexer/IndexerState", currentState.name());
     
-    DogLog.log("Subsystems/Indexer/SpindexerMotorVelocity", spindexerMotor.getVelocity().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/SpindexerMotorSupplyCurrent", spindexerMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/SpindexerMotorStatorCurrent", spindexerMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/SpindexerMotorVoltage", spindexerMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/Spindexer/SpindexerMotorVelocity", spindexerMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/Spindexer/SpindexerMotorSupplyCurrent", spindexerMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/Spindexer/SpindexerMotorStatorCurrent", spindexerMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/Spindexer/SpindexerMotorVoltage", spindexerMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Subsystems/Indexer/IndexerMotorVelocity", indexerMotor.getVelocity().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/IndexerMotorSupplyCurrent", indexerMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/IndexerMotorStatorCurrent", indexerMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Indexer/IndexerMotorVoltage", indexerMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/IndexerMotorVelocity", indexerMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/IndexerMotorSupplyCurrent", indexerMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/IndexerMotorStatorCurrent", indexerMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Indexer/Basic/IndexerMotorVoltage", indexerMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Subsystems/Indexer/IndexerSensor", indexerSensor.getIsDetected().getValue());
+    DogLog.log("Subsystems/Indexer/Basic/IndexerSensor", indexerSensor.getIsDetected().getValue());
   }
 
   @Override

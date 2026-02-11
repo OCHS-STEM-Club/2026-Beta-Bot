@@ -10,7 +10,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 public class ShooterConstants {
     public static final int kMotorId = 23;
 
-    public static final int kSupplyCurrentLimit = 15;
+    public static final int kSupplyCurrentLimit = 35;
 
     public static final double kP = 1;
     public static final double kI = 1;

@@ -6,6 +6,7 @@ package frc.robot.subsystems.Climber;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -13,56 +14,40 @@ import dev.doglog.DogLog;
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  private Solenoid m_solenoid;
-  private Compressor m_compressor;
+  private Solenoid solenoid;
+  private Compressor compressor;
 
-  private ClimberState currentState = ClimberState.OFF;
+  private ClimberState currentState = ClimberState.RETRACT;
   
   public Climber() {
-    m_solenoid = new Solenoid(PneumaticsModuleType.REVPH, ClimberConstants.kSolenoidChannel);
-    m_compressor = new Compressor(PneumaticsModuleType.REVPH);
+    solenoid = new Solenoid(PneumaticsModuleType.CTREPCM, ClimberConstants.kSolenoidChannel);
+    compressor = new Compressor(PneumaticsModuleType.CTREPCM);
 
   }
 
-  public void solenoidOpen () {
-    m_solenoid.set(true);
-  }
-
-  public void solenoidClose () {
-    m_solenoid.set(false);
-  }
-
-  public void compressorEnable() {
-    //Pick one of the three
-    m_compressor.enableDigital();
-    //m_compressor.enableAnalog(70, 120);
-    //m_compressor.enableHybrid(70, 120); 
-  }
-
-  public void compressorDisable() {
-    m_compressor.disable();
-  }
+  
   
   public void setGoal(ClimberState desiredState) {
     currentState = desiredState;
     switch(desiredState){
-      case ON:
-        solenoidOpen();
-        compressorDisable();
+      case EXTEND:
+        solenoid.set(true);
         break;
-      case OFF:
-        solenoidClose();
-        compressorEnable();
+      case RETRACT:
+        solenoid.set(false);
         break;
     }
   }
 
-  public void logMotorData() {
+  public void logPneumaticsData() {
     DogLog.log("Subsystems/Climber/ClimberState", currentState.name());
+    SmartDashboard.putData(compressor);
+    SmartDashboard.putData(solenoid);
   }
 
   @Override
   public void periodic() {
-    logMotorData();
+    logPneumaticsData();
+    compressor.enableDigital();
   }
 }

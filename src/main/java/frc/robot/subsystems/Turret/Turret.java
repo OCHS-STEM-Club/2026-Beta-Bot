@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -66,7 +67,10 @@ public class Turret extends SubsystemBase {
                                         .withMotionMagicAcceleration(TurretConstants.kAcceleration)
                                         .withMotionMagicJerk(TurretConstants.kJerk))
                         .withCurrentLimits(new CurrentLimitsConfigs()
-                                        .withSupplyCurrentLimit(TurretConstants.kSupplyCurrentLimit));
+                                        .withSupplyCurrentLimit(TurretConstants.kSupplyCurrentLimit))
+                        .withFeedback(new FeedbackConfigs()
+                                      .withSensorToMechanismRatio(TurretConstants.kSensorToMechanismRatio)
+                                      .withRotorToSensorRatio(TurretConstants.kRotorToSensorRatio));
     
     turretMotor.getConfigurator().apply(turretConfig);
 
@@ -220,13 +224,13 @@ public class Turret extends SubsystemBase {
     DogLog.log("Subsystems/Turret/PivotSetpoint", m_motionRequest.Position);
     DogLog.log("Subsystems/Turret/IsAtSetpoint", Math.abs(turretMotor.getPosition().getValueAsDouble() - m_motionRequest.Position) <= TurretConstants.kTolerance);
 
-    DogLog.log("Subsystems/Turret/PivotVelocity", turretMotor.getVelocity().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/PivotSupplyCurrent", turretMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/PivotStatorCurrent", turretMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/PivotVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/Basic/PivotVelocity", turretMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/Basic/PivotSupplyCurrent", turretMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/Basic/PivotStatorCurrent", turretMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Subsystems/Turret/Basic/PivotVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Subsystems/Turret/RobotRelativeAngle", m_robotRelativeAngle);
-    DogLog.log("Subsystems/Turret/FieldRelativeAngle", m_fieldRelativeAngle);
-    DogLog.log("Subsystems/Turret/TurretPose", new Pose2d(m_swerveSubsystem.getState().Pose.getTranslation(), Rotation2d.fromDegrees(m_fieldRelativeAngle)));
+    DogLog.log("Subsystems/Turret/Tracking/RobotRelativeAngle", m_robotRelativeAngle);
+    DogLog.log("Subsystems/Turret/Tracking/FieldRelativeAngle", m_fieldRelativeAngle);
+    DogLog.log("Subsystems/Turret/Tracking/TurretPose", new Pose2d(m_swerveSubsystem.getState().Pose.getTranslation(), Rotation2d.fromDegrees(m_fieldRelativeAngle)));
   }
 }

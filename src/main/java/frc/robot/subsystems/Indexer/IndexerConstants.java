@@ -4,12 +4,18 @@
 
 package frc.robot.subsystems.Indexer;
 
+import edu.wpi.first.math.util.Units;
+
 /** Add your docs here. */
 public class IndexerConstants {
     public static final int kIndexerMotorId = 20;
     public static final int kSpindexerMotorId = 19;
 
-    public static final int kIndexerSupplyCurrentLimit = 15;
+    public static final int kIndexerSupplyCurrentLimit = 35;
+    public static final int kSpindexerSupplyCurrentLimit = 35;
+
+    public static final int kIndexerSensorMinSignalStrength = 2000;
+    public static final double kIndexerSensorProximityThreshold = Units.inchesToMeters(0.1);
 
     public static final int kIndexerInSpeed = 1;
     public static final int kIndexerOutSpeed = -kIndexerInSpeed;
