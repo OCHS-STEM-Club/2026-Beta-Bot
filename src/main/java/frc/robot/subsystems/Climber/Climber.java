@@ -4,45 +4,45 @@
 
 package frc.robot.subsystems.Climber;
 
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import dev.doglog.DogLog;
 
 public class Climber extends SubsystemBase {
-  /** Creates a new Climber. */
-  private Solenoid solenoid;
+  private DoubleSolenoid solenoid;
   private Compressor compressor;
-
+  private PneumaticHub pneumaticHub;
   private ClimberState currentState = ClimberState.RETRACT;
   
+  /** Creates a new Climber. */
   public Climber() {
-    solenoid = new Solenoid(PneumaticsModuleType.CTREPCM, ClimberConstants.kSolenoidChannel);
-    compressor = new Compressor(PneumaticsModuleType.CTREPCM);
-
+    pneumaticHub = new PneumaticHub(ClimberConstants.kPHcanId);
+    solenoid = pneumaticHub.makeDoubleSolenoid(ClimberConstants.kForwardChannel, ClimberConstants.kReverseChannel);
+    compressor = pneumaticHub.makeCompressor();
   }
 
-  
-  
   public void setGoal(ClimberState desiredState) {
     currentState = desiredState;
     switch(desiredState){
       case EXTEND:
-        solenoid.set(true);
+        solenoid.set(DoubleSolenoid.Value.kForward);
         break;
       case RETRACT:
-        solenoid.set(false);
+        solenoid.set(DoubleSolenoid.Value.kReverse);
+        break;
+      case OFF:
+        solenoid.set(DoubleSolenoid.Value.kOff);
         break;
     }
   }
 
   public void logPneumaticsData() {
     DogLog.log("Subsystems/Climber/ClimberState", currentState.name());
-    SmartDashboard.putData(compressor);
-    SmartDashboard.putData(solenoid);
+    DogLog.log("Subsystems/Climber/SolenoidOpen?", solenoid.get());
+    /* Potentially more log stuff */
   }
 
   @Override

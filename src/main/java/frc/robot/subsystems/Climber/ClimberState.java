@@ -7,5 +7,6 @@ package frc.robot.subsystems.Climber;
 /** Add your docs here. */
 public enum ClimberState {
     RETRACT,
-    EXTEND
+    EXTEND,
+    OFF
 }

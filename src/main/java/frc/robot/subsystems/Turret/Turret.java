@@ -217,6 +217,10 @@ public class Turret extends SubsystemBase {
     logMotorData();
   }
 
+  public boolean isAtSetpoint() {
+    return Math.abs(turretMotor.getPosition().getValueAsDouble() - m_motionRequest.Position) <= TurretConstants.kTolerance;
+  }
+
   public void logMotorData() {
     DogLog.log("Subsystems/Turret/TurretState", currentState.name());
     
