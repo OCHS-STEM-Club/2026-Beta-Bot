@@ -13,9 +13,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,13 +22,16 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Climber.Climber;
-import frc.robot.subsystems.Climber.ClimberConstants;
+import frc.robot.subsystems.Climber.ClimberState;
 import frc.robot.subsystems.Drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer.Indexer;
+import frc.robot.subsystems.Indexer.IndexerState;
 import frc.robot.subsystems.Intake.Intake;
+import frc.robot.subsystems.Intake.IntakeState;
 import frc.robot.subsystems.Shooter.Shooter;
+import frc.robot.subsystems.Shooter.ShooterState;
 import frc.robot.subsystems.Turret.Turret;
-import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.Turret.TurretState;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -64,13 +64,14 @@ public class RobotContainer {
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
 
-        configureBindings();
+        //configureIdealBindings();
+        configureTestBindings();
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
     }
 
-    private void configureBindings() {
+    private void configureIdealBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
@@ -89,31 +90,107 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        joystick.x().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
-        joystick.povUp().whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(0.5).withVelocityY(0))
-        );
-        joystick.povDown().whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(-0.5).withVelocityY(0))
-        );
+        // Reset the field-centric heading on button A press.
+        joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+        joystick.leftTrigger()
+            .onTrue(intake.runOnce(() -> intake.setGoal(IntakeState.INTAKE)))
+            .onFalse(intake.runOnce(() -> intake.setGoal(IntakeState.STOP)));
+
+        joystick.rightTrigger()
+            .onTrue(shooter.runOnce(() -> shooter.setAutoGoalEnabled(true)))
+            .onFalse(
+                shooter.runOnce(() -> {
+                                        shooter.setAutoGoalEnabled(false); 
+                                        shooter.setGoal(ShooterState.IDLE);
+                                        indexer.setGoal(IndexerState.IDLE);
+                                      })
+            );
+
+        joystick.rightTrigger()
+            .and(
+                () -> shooter.isAtSetpoint())
+            .and(
+                () -> turret.isAtSetpoint())
+
+                .onTrue(indexer.runOnce(() -> indexer.setGoal(IndexerState.SPINDEX))
+                ).onFalse(indexer.runOnce(() -> indexer.setGoal(IndexerState.IDLE)));
+
+        joystick.y().onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)));
+        joystick.x().onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)));
+
+        // joystick.povUp().whileTrue(drivetrain.applyRequest(() ->
+        //     forwardStraight.withVelocityX(0.5).withVelocityY(0))
+        // );
+        // joystick.povDown().whileTrue(drivetrain.applyRequest(() ->
+        //     forwardStraight.withVelocityX(-0.5).withVelocityY(0))
+        // );
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-        // Reset the field-centric heading on left bumper press.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+    }
 
+    private void configureTestBindings() {
+        // Note that X is defined as forward according to WPILib convention,
+        // and Y is defined as to the left according to WPILib convention.
+        drivetrain.setDefaultCommand(
+            // Drivetrain will execute this command periodically
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            )
+        );
+
+        // Idle while the robot is disabled. This ensures the configured
+        // neutral mode is applied to the drive motors while disabled.
+        final var idle = new SwerveRequest.Idle();
+        RobotModeTriggers.disabled().whileTrue(
+            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
+        );
+
+        joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+        joystick.x()
+            .onTrue(turret.runOnce(() -> turret.turretTurnLeft()))
+            .onFalse(turret.runOnce(() -> turret.turretStop()));
+
+        joystick.b()
+            .onTrue(turret.runOnce(() -> turret.turretTurnRight()))
+            .onFalse(turret.runOnce(() -> turret.turretStop()));
+
+        joystick.leftTrigger()
+            .onTrue(intake.runOnce(() -> intake.setGoal(IntakeState.INTAKE)))
+            .onFalse(intake.runOnce(() -> intake.setGoal(IntakeState.STOP)));
+
+        joystick.leftBumper()
+            .onTrue(indexer.runOnce(() -> indexer.setGoal(IndexerState.SPINDEX)))
+            .onFalse(indexer.runOnce(() -> indexer.setGoal(IndexerState.STOP)));
         
+        joystick.rightTrigger()
+            .onTrue(shooter.runOnce(() -> shooter.shooterOn()))
+            .onFalse(shooter.runOnce(() -> shooter.shooterOn()));
+
+        joystick.povUp()
+            .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)))
+            .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
+
+        joystick.povDown()
+            .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)))
+            .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
+
+        drivetrain.registerTelemetry(logger::telemeterize);
     }
 
     public Command getAutonomousCommand() {

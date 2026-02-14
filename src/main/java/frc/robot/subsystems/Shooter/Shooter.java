@@ -73,7 +73,7 @@ public class Shooter extends SubsystemBase {
 
     m_voltageRequest = new VoltageOut(0);
 
-    m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(ShooterConstants.kFeedforward);
+    m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withFeedForward(ShooterConstants.kFeedforward).withEnableFOC(true);
 
     ShooterConstants.setupShooterMap();
   }

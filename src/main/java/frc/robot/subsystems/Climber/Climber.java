@@ -4,34 +4,37 @@
 
 package frc.robot.subsystems.Climber;
 
-import edu.wpi.first.wpilibj.Solenoid;
-//import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import dev.doglog.DogLog;
 
 public class Climber extends SubsystemBase {
-  private Solenoid solenoid;
-  //private Compressor compressor;
+  private DoubleSolenoid solenoid;
+  private Compressor compressor;
   private PneumaticHub pneumaticHub;
   private ClimberState currentState = ClimberState.RETRACT;
   
   /** Creates a new Climber. */
   public Climber() {
     pneumaticHub = new PneumaticHub(ClimberConstants.kPHcanId);
-    solenoid = pneumaticHub.makeSolenoid(ClimberConstants.kSolenoidChannel);
-    //compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+    solenoid = pneumaticHub.makeDoubleSolenoid(ClimberConstants.kForwardChannel, ClimberConstants.kReverseChannel);
+    compressor = pneumaticHub.makeCompressor();
   }
 
   public void setGoal(ClimberState desiredState) {
     currentState = desiredState;
     switch(desiredState){
       case EXTEND:
-        solenoid.set(true);
+        solenoid.set(DoubleSolenoid.Value.kForward);
         break;
       case RETRACT:
-        solenoid.set(false);
+        solenoid.set(DoubleSolenoid.Value.kReverse);
+        break;
+      case OFF:
+        solenoid.set(DoubleSolenoid.Value.kOff);
         break;
     }
   }
@@ -45,6 +48,6 @@ public class Climber extends SubsystemBase {
   @Override
   public void periodic() {
     logPneumaticsData();
-    //compressor.enableDigital();
+    compressor.enableDigital();
   }
 }

@@ -9,6 +9,7 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.ProximityParamsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.configs.ToFParamsConfigs;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -31,6 +32,9 @@ public class Indexer extends SubsystemBase {
   private CANrangeConfiguration indexerSensorConfig;
 
   private IndexerState currentState = IndexerState.STOP;
+
+  private CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
+
   /** Creates a new Indexer. */
   public Indexer() {
     spindexerMotor = new TalonFX(IndexerConstants.kSpindexerMotorId);
@@ -51,10 +55,14 @@ public class Indexer extends SubsystemBase {
                                               .withInverted(InvertedValue.Clockwise_Positive))
                         .withCurrentLimits(new CurrentLimitsConfigs()
                                               .withSupplyCurrentLimit(IndexerConstants.kIndexerSupplyCurrentLimit));
+    currentLimits.StatorCurrentLimit = 120;
+    currentLimits.StatorCurrentLimitEnable = true;
+    
     indexerMotor.getConfigurator().apply(indexerConfig);
+    indexerMotor.getConfigurator().apply(currentLimits);
 
     indexerSensor = new CANrange(IndexerConstants.kIndexerSensorId);
-
+    
     indexerSensorConfig = new CANrangeConfiguration()
                         .withProximityParams(new ProximityParamsConfigs()
                                               .withMinSignalStrengthForValidMeasurement(IndexerConstants.kIndexerSensorMinSignalStrength)
