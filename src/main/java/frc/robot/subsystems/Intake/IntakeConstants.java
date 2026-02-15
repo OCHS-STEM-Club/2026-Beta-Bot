@@ -10,6 +10,6 @@ public class IntakeConstants {
 
     public static final int kIntakeSupplyCurrentLimit = 35;
 
-    public static final int kIntakeInSpeed = 1;
-    public static final int kIntakeOutSpeed = -kIntakeInSpeed;
+    public static final double kIntakeInSpeed = 0.5;
+    public static final double kIntakeOutSpeed = -kIntakeInSpeed;
 }

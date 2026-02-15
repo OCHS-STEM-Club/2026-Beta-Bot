@@ -18,6 +18,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -29,6 +30,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -61,16 +63,19 @@ public class Turret extends SubsystemBase {
                         .withSlot0(new Slot0Configs()
                                     .withKP(TurretConstants.kP)
                                     .withKI(TurretConstants.kI)
-                                    .withKD(TurretConstants.kD))
+                                    .withKD(TurretConstants.kD)
+                                    .withKA(0.50555)
+                                    .withKV(1.4999)
+                                    .withKS(-0.34727))
                         .withMotionMagic(new MotionMagicConfigs()
                                         .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
-                                        .withMotionMagicAcceleration(TurretConstants.kAcceleration)
-                                        .withMotionMagicJerk(TurretConstants.kJerk))
+                                        .withMotionMagicAcceleration(TurretConstants.kAcceleration))
+                                        // .withMotionMagicJerk(TurretConstants.kJerk/)
                         .withCurrentLimits(new CurrentLimitsConfigs()
                                         .withSupplyCurrentLimit(TurretConstants.kSupplyCurrentLimit))
                         .withFeedback(new FeedbackConfigs()
-                                      .withSensorToMechanismRatio(TurretConstants.kSensorToMechanismRatio)
-                                      .withRotorToSensorRatio(TurretConstants.kRotorToSensorRatio));
+                                      // .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
+                                      .withSensorToMechanismRatio(TurretConstants.kSensorToMechanismRatio));
     
     turretMotor.getConfigurator().apply(turretConfig);
 
@@ -78,7 +83,7 @@ public class Turret extends SubsystemBase {
 
     m_voltageRequest = new VoltageOut(0);
 
-    m_motionRequest = new MotionMagicVoltage(0).withSlot(0).withFeedForward(TurretConstants.kFeedforward);
+    m_motionRequest = new MotionMagicVoltage(0).withSlot(0);
   }
 
   public void setGoal(TurretState desiredState) {
@@ -155,7 +160,7 @@ public class Turret extends SubsystemBase {
 
   public void setPivotPosition(double position) {
     double moddedPosition = MathUtil.inputModulus(position, TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
-    turretMotor.setControl(m_motionRequest.withPosition(moddedPosition));
+    turretMotor.setControl(m_motionRequest.withPosition(moddedPosition/360));
   }
 
   public void turretTrackPose(Pose2d target) {
@@ -222,10 +227,12 @@ public class Turret extends SubsystemBase {
   }
 
   public void logMotorData() {
+
+    // SmartDashboard.putData("Tuurret motor", turretMotor.getcontrolle);
     DogLog.log("Subsystems/Turret/TurretState", currentState.name());
     
-    DogLog.log("Subsystems/Turret/PivotPosition", turretMotor.getPosition().getValueAsDouble());
-    DogLog.log("Subsystems/Turret/PivotSetpoint", m_motionRequest.Position);
+    DogLog.log("Subsystems/Turret/PivotPosition", turretMotor.getPosition().getValueAsDouble() * 360);
+    DogLog.log("Subsystems/Turret/PivotSetpoint", m_motionRequest.Position * 360);
     DogLog.log("Subsystems/Turret/IsAtSetpoint", Math.abs(turretMotor.getPosition().getValueAsDouble() - m_motionRequest.Position) <= TurretConstants.kTolerance);
 
     DogLog.log("Subsystems/Turret/Basic/PivotVelocity", turretMotor.getVelocity().getValueAsDouble());

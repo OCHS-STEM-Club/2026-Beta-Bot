@@ -24,11 +24,11 @@ public class Intake extends SubsystemBase {
   /** Creates a new Intake. */
   public Intake() {
 
-  rollerMotor = new TalonFX(IntakeConstants.kIntakeMotorId);
+  rollerMotor = new TalonFX(IntakeConstants.kIntakeMotorId,"Drive CANivore");
 
   rollerConfig = new TalonFXConfiguration()
                       .withMotorOutput(new MotorOutputConfigs()
-                                            .withInverted(InvertedValue.CounterClockwise_Positive) //Set motor inversion based on mechanism
+                                            .withInverted(InvertedValue.Clockwise_Positive) //Set motor inversion based on mechanism
                                             .withNeutralMode(NeutralModeValue.Brake))
                       .withCurrentLimits(new CurrentLimitsConfigs()
                                             .withSupplyCurrentLimit(IntakeConstants.kIntakeSupplyCurrentLimit));

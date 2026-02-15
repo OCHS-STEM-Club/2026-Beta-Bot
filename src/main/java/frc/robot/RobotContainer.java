@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -138,20 +140,21 @@ public class RobotContainer {
         // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
+
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
     private void configureTestBindings() {
         // Note that X is defined as forward according to WPILib convention,
-        // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
-        );
+        // // and Y is defined as to the left according to WPILib convention.
+        // drivetrain.setDefaultCommand(
+        //     // Drivetrain will execute this command periodically
+        //     drivetrain.applyRequest(() ->
+        //         drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+        //             .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+        //             .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+        //     )
+        // );
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -160,15 +163,27 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+        joystick.leftBumper().onTrue(Commands.runOnce(()-> SignalLogger.start()));
+        joystick.rightBumper().onTrue(Commands.runOnce(()-> SignalLogger.stop()));
+
+        joystick.back().and(joystick.y()).whileTrue(turret.sysIdDynamic(Direction.kForward));
+        joystick.back().and(joystick.x()).whileTrue(turret.sysIdDynamic(Direction.kReverse));
+        joystick.start().and(joystick.y()).whileTrue(turret.sysIdQuasistatic(Direction.kForward));
+        joystick.start().and(joystick.x()).whileTrue(turret.sysIdQuasistatic(Direction.kReverse));
+
+        // joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         joystick.x()
             .onTrue(turret.runOnce(() -> turret.turretTurnLeft()))
             .onFalse(turret.runOnce(() -> turret.turretStop()));
-
+        
         joystick.b()
             .onTrue(turret.runOnce(() -> turret.turretTurnRight()))
             .onFalse(turret.runOnce(() -> turret.turretStop()));
+
+        joystick.y()
+            .onTrue(turret.runOnce(() -> turret.setPivotPosition(90)));
 
         joystick.leftTrigger()
             .onTrue(intake.runOnce(() -> intake.setGoal(IntakeState.INTAKE)))
@@ -180,15 +195,15 @@ public class RobotContainer {
         
         joystick.rightTrigger()
             .onTrue(shooter.runOnce(() -> shooter.shooterOn()))
-            .onFalse(shooter.runOnce(() -> shooter.shooterOn()));
+            .onFalse(shooter.runOnce(() -> shooter.shooterOff()));
 
-        joystick.povUp()
-            .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)))
-            .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
+        // joystick.povUp()
+        //     .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)))
+        //     .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
 
-        joystick.povDown()
-            .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)))
-            .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
+        // joystick.povDown()
+        //     .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)))
+        //     .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

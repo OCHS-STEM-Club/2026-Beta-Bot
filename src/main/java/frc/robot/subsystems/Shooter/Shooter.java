@@ -57,7 +57,7 @@ public class Shooter extends SubsystemBase {
 
     shooterConfig = new TalonFXConfiguration()
                     .withMotorOutput(new MotorOutputConfigs()
-                                    .withInverted(InvertedValue.Clockwise_Positive)
+                                    .withInverted(InvertedValue.CounterClockwise_Positive)
                                     .withNeutralMode(NeutralModeValue.Brake))
                     .withSlot0(new Slot0Configs()
                               .withKP(ShooterConstants.kP)

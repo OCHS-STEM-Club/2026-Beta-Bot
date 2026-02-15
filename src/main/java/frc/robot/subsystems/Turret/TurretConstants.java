@@ -11,13 +11,13 @@ public class TurretConstants {
     public static final double kMinAngle = -180;
     public static final double kMaxAngle = 180;
 
-    public static final double kP = 1;
-    public static final double kI = 1;
-    public static final double kD = 1;
+    public static final double kP = 80;
+    public static final double kI = 0;
+    public static final double kD = 0;
 
-    public static final double kCruiseVelocity = 1;
-    public static final double kAcceleration = 1;
-    public static final double kJerk = 1;
+    public static final double kCruiseVelocity = 9999;
+    public static final double kAcceleration = 9999;
+    public static final double kJerk = 0;
 
     public static final double kTurretTransformInchesX = 1;
     public static final double kTurretTransformInchesY = 10;
@@ -28,9 +28,9 @@ public class TurretConstants {
 
     public static final double kSupplyCurrentLimit = 35;
 
-    public static final double kSensorToMechanismRatio = .5;
+    public static final double kSensorToMechanismRatio = 12.5;
 
-    public static final double kRotorToSensorRatio = .5;
+    public static final double kRotorToSensorRatio = 12.5;
 
-    public static final double kSpeed = 1;
+    public static final double kSpeed = 0.15;
 }
