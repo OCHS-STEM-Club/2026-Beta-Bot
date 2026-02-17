@@ -8,6 +8,6 @@ package frc.robot.subsystems.Indexer;
 public enum IndexerState {
     SPINDEX,
     OUTTAKE,
-    IDLE,
+    //IDLE,
     STOP
 }

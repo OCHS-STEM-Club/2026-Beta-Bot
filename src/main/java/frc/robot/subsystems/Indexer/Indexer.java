@@ -28,7 +28,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.subsystems.Shooter.ShooterConstants;
 
 public class Indexer extends SubsystemBase {
 
@@ -38,8 +37,8 @@ public class Indexer extends SubsystemBase {
   private TalonFX indexerMotor;
   private TalonFXConfiguration indexerConfig;
 
-  private CANrange indexerSensor;
-  private CANrangeConfiguration indexerSensorConfig;
+  //private CANrange indexerSensor;
+  //private CANrangeConfiguration indexerSensorConfig;
 
   private IndexerState currentState = IndexerState.STOP;
 
@@ -78,15 +77,15 @@ public class Indexer extends SubsystemBase {
                         .withCurrentLimits(new CurrentLimitsConfigs()
                                               .withSupplyCurrentLimit(IndexerConstants.kIndexerSupplyCurrentLimit));
 
-    indexerSensor = new CANrange(IndexerConstants.kIndexerSensorId);
+    //indexerSensor = new CANrange(IndexerConstants.kIndexerSensorId);
     
-    indexerSensorConfig = new CANrangeConfiguration()
-                        .withProximityParams(new ProximityParamsConfigs()
-                                              .withMinSignalStrengthForValidMeasurement(IndexerConstants.kIndexerSensorMinSignalStrength)
-                                              .withProximityThreshold(IndexerConstants.kIndexerSensorProximityThreshold))
-                        .withToFParams(new ToFParamsConfigs()
-                                              .withUpdateMode(UpdateModeValue.ShortRange100Hz));
-    indexerSensor.getConfigurator().apply(indexerSensorConfig);
+    // indexerSensorConfig = new CANrangeConfiguration()
+    //                     .withProximityParams(new ProximityParamsConfigs()
+    //                                           .withMinSignalStrengthForValidMeasurement(IndexerConstants.kIndexerSensorMinSignalStrength)
+    //                                           .withProximityThreshold(IndexerConstants.kIndexerSensorProximityThreshold))
+    //                     .withToFParams(new ToFParamsConfigs()
+    //                                           .withUpdateMode(UpdateModeValue.ShortRange100Hz));
+    //indexerSensor.getConfigurator().apply(indexerSensorConfig);
 
     m_voltageRequest = new VoltageOut(0);
 
@@ -133,15 +132,15 @@ public class Indexer extends SubsystemBase {
         spindexerMotor.set(IndexerConstants.kSpindexerOutSpeed);
         indexerMotor.set(IndexerConstants.kIndexerOutSpeed);
         break;
-      case IDLE:
-        if(indexerSensor.getIsDetected().getValue()){
-          spindexerMotor.stopMotor();
-          indexerMotor.stopMotor();
-        } else {
-          spindexerMotor.set(IndexerConstants.kSpindexerInSpeed);
-          indexerMotor.set(IndexerConstants.kIndexerInSpeed);
-        }
-        break;
+      // case IDLE:
+      //   if(indexerSensor.getIsDetected().getValue()){
+      //     spindexerMotor.stopMotor();
+      //     indexerMotor.stopMotor();
+      //   } else {
+      //     spindexerMotor.set(IndexerConstants.kSpindexerInSpeed);
+      //     indexerMotor.set(IndexerConstants.kIndexerInSpeed);
+      //   }
+      //   break;
       case STOP:
         spindexerMotor.stopMotor();
         indexerMotor.stopMotor();
@@ -162,7 +161,7 @@ public class Indexer extends SubsystemBase {
     DogLog.log("Subsystems/Indexer/Basic/Indexer/IndexerMotorStatorCurrent", indexerMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Subsystems/Indexer/Basic/Indexer/IndexerMotorVoltage", indexerMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Subsystems/Indexer/Basic/Indexer/IndexerSensor", indexerSensor.getIsDetected().getValue());
+    //DogLog.log("Subsystems/Indexer/Basic/Indexer/IndexerSensor", indexerSensor.getIsDetected().getValue());
   }
 
   @Override
