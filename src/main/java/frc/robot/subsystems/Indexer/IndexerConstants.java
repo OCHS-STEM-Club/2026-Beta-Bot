@@ -20,7 +20,7 @@ public class IndexerConstants {
     public static final double kIndexerInSpeed = 1;
     public static final double kIndexerOutSpeed = -kIndexerInSpeed;
 
-    public static final double kSpindexerInSpeed = 1; //RPS NOT PERCENT
+    public static final double kSpindexerInSpeed = 1;
     public static final double kSpindexerOutSpeed = -kSpindexerInSpeed;
 
     public static final int kIndexerSensorId = 21;

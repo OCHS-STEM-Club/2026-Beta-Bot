@@ -26,9 +26,9 @@ public class ShooterConstants {
 
     public static final double kVelocityTolerance = 1;
 
-    public static final double kPrepSpeed = 0.25;
+    public static final double kPrepSpeed = 0.25; // RPS 1-100
 
-    public static final double kMotorSpeed = 0.60;
+    public static final double kMotorSpeed = 0.60; //RPS 1-1000
 
     public static InterpolatingDoubleTreeMap kShooterMap = new InterpolatingDoubleTreeMap(); //may need to change data types
 

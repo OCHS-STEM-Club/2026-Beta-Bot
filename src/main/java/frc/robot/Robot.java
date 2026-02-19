@@ -21,8 +21,8 @@ public class Robot extends LoggedRobot {
     public Robot() {
         Logger.recordMetadata("Beta-Bot", "MyProject"); // Set a metadata value
 
-            Logger.addDataReceiver(new WPILOGWriter()); // Log to a USB stick ("/U/logs")
-            Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new WPILOGWriter()); // Log to a USB stick ("/U/logs")
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
 
         Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may be added.
 
