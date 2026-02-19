@@ -6,14 +6,14 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.FollowPathCommand;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -31,6 +31,7 @@ import frc.robot.subsystems.Turret.Turret;
 import frc.robot.subsystems.Vision.Vision;
 import frc.robot.subsystems.Vision.VisionConstants;
 import frc.robot.subsystems.Vision.VisionIOLimelight;
+import frc.robot.util.ShiftHelpers;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -40,10 +41,6 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-    private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -55,18 +52,39 @@ public class RobotContainer {
     public final Indexer indexer = new Indexer();
     public final Intake intake = new Intake();
     public final Climber climber = new Climber();
-    private Vision vision;
+    public final Vision vision = new Vision(
+                                    drivetrain::addVisionMeasurement,
+                                    new VisionIOLimelight(VisionConstants.camera0Name, () -> drivetrain.getState().Pose.getRotation()),
+                                    new VisionIOLimelight(VisionConstants.camera1Name, () -> drivetrain.getState().Pose.getRotation()));
+
+    public final ShiftHelpers shiftHelpers = new ShiftHelpers();
 
     public RobotContainer() {
-        vision = new Vision(
-            drivetrain::addVisionMeasurement,
-            new VisionIOLimelight(VisionConstants.camera0Name, () -> drivetrain.getState().Pose.getRotation()),
-            new VisionIOLimelight(VisionConstants.camera1Name, () -> drivetrain.getState().Pose.getRotation()));
 
         //configureIdealBindings();
         configureTestBindings();
+        setupShiftHelpers();
+        setupSingleColorView();
+    }
 
-        //SignalLogger.enableAutoLogging(false);
+    private void setupShiftHelpers() {
+        Logger.recordOutput("ShiftHelpers/CurrentShiftIsYours", shiftHelpers.currentShiftIsYours());
+        Logger.recordOutput("ShiftHelpers/TimeLeftInCurrentState", shiftHelpers.timeLeftInShiftSeconds(DriverStation.getMatchTime()));
+        Logger.recordOutput("ShiftHelpers/CurrentShift", shiftHelpers.getCurrentShiftState());
+    }
+
+    private void setupSingleColorView(){
+        Color green = new Color(0, 255, 68);
+        Color white = new Color(255, 255, 255);
+        Color blue = new Color(0, 57, 162);
+
+        if (turret.isAtSetpoint() && shooter.isAtSetpoint() && joystick.rightTrigger().getAsBoolean()) { // If we're in a good shooting state, show green
+            Logger.recordOutput("SingleColorView", green.toHexString());
+        }else if (shiftHelpers.timeLeftInShiftSeconds(DriverStation.getMatchTime()) <= 5) { // If we're in the last 5 seconds of the shift
+            Logger.recordOutput("SingleColorView", white.toHexString());
+        } else { // Otherwise, show blue
+            Logger.recordOutput("SingleColorView", blue.toHexString());
+        }
     }
 
     private void configureIdealBindings() {
@@ -95,17 +113,17 @@ public class RobotContainer {
 
         joystick.leftTrigger()
             .onTrue(
-                intake.runOnce(() -> intake.setGoal(IntakeState.INTAKE)))
+                intake.runOnce(()-> intake.setGoal(IntakeState.INTAKE)))
             .onFalse(
-                intake.runOnce(() -> intake.setGoal(IntakeState.STOP)));
+                intake.runOnce(()-> intake.setGoal(IntakeState.STOP)));
 
 
 
         joystick.rightTrigger()
             .onTrue(
-                shooter.runOnce(() -> shooter.setAutoGoalEnabled(true)))
+                shooter.runOnce(()-> shooter.setAutoGoalEnabled(true)))
             .onFalse(
-                shooter.runOnce(() -> {
+                shooter.runOnce(()-> {
                                         shooter.setAutoGoalEnabled(false); 
                                         shooter.setGoal(ShooterState.IDLE);
                                       })
@@ -113,21 +131,21 @@ public class RobotContainer {
 
         joystick.rightTrigger()
             .and(
-                () -> shooter.isAtSetpoint())
+                ()-> shooter.isAtSetpoint())
             .and(
-                () -> turret.isAtSetpoint())
+                ()-> turret.isAtSetpoint())
 
             .onTrue(
-                indexer.runOnce(() -> indexer.setGoal(IndexerState.SPINDEX))
+                indexer.runOnce(()-> indexer.setGoal(IndexerState.SPINDEX))
             ).onFalse(
-                indexer.runOnce(() -> indexer.setGoal(IndexerState.STOP)));
+                indexer.runOnce(()-> indexer.setGoal(IndexerState.STOP)));
 
 
         joystick.start().onTrue(
-            climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)));
+            climber.runOnce(()-> climber.setGoal(ClimberState.EXTEND)));
             
         joystick.back().onTrue(
-            climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)));
+            climber.runOnce(()-> climber.setGoal(ClimberState.RETRACT)));
 
 
         drivetrain.registerTelemetry(logger::telemeterize);

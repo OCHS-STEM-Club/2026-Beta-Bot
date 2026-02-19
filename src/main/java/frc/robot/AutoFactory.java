@@ -1,11 +1,8 @@
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Rotation;
-
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ApplyRobotSpeeds;
 
