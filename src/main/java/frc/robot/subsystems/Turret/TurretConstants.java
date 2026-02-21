@@ -26,12 +26,10 @@ public class TurretConstants {
 
     public static final double kCruiseVelocity = 1000;
     public static final double kAcceleration = 5000;
-    public static final double kJerk = 0;
 
-    public static final double kTurretTransformInchesX = 6.5;
-    public static final double kTurretTransformInchesY = 5.5;
+    public static final double kTurretTransformInchesX = 6.5; // Inches
+    public static final double kTurretTransformInchesY = 5.5; // Inches
 
-    public static final double kFeedforward = 0.0;
     
     public static final double kTolerance = 5;
 

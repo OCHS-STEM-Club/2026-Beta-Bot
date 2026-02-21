@@ -5,7 +5,6 @@
 package frc.robot.subsystems.Shooter;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.util.LoggedTunableNumber;
 
 /** Add your docs here. */
@@ -24,15 +23,12 @@ public class ShooterConstants {
     public static final int kAcceleration = 1000;
     public static final int kJerk = 1000;
 
-    public static final double kFeedforward = 0.0;
-
-    public static final double kVelocityTolerance = 2;
+    public static final double kVelocityTolerance = 2; // RPS 1-100
 
     public static final double kPrepSpeed = 25; // RPS 1-100
 
-    // public static final double kMotorSpeed = 0.60; //RPS 1-100
 
-    public static InterpolatingDoubleTreeMap kShooterMap = new InterpolatingDoubleTreeMap(); //may need to change data types
+    public static InterpolatingDoubleTreeMap kShooterMap = new InterpolatingDoubleTreeMap();
 
     private static final LoggedTunableNumber kshooter15 = new LoggedTunableNumber("Shooter/1.5", 30,true);
     private static final LoggedTunableNumber kshooter20 = new LoggedTunableNumber("Shooter/2.0", 43,true);

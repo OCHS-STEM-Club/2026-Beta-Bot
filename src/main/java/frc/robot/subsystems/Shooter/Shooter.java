@@ -21,7 +21,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.Drive.CommandSwerveDrivetrain;
 import frc.robot.Constants.PoseConstants;
@@ -70,8 +69,6 @@ public class Shooter extends SubsystemBase {
 
     m_motionRequest = new MotionMagicVelocityVoltage(0).withSlot(0).withEnableFOC(true);
 
-    // ShooterConstants.setupShooterMap();
-
 
   }
 
@@ -79,7 +76,6 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     if (autoGoalEnabled) {
-    // ShooterConstants.setupShooterMap();
     autoGoal();
     }
 

@@ -12,11 +12,12 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.Constants.ColorConstants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Climber.ClimberState;
@@ -34,17 +35,16 @@ import frc.robot.subsystems.Vision.VisionIOLimelight;
 import frc.robot.util.ShiftHelpers;
 
 public class RobotContainer {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+            .withDeadband(DriveConstants.kMaxSpeed * DriveConstants.kTranslationDeadband) // translational deadband
+            .withRotationalDeadband(DriveConstants.kMaxAngularRate * DriveConstants.kRotationDeadband) // rotational deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    private final Telemetry logger = new Telemetry(DriveConstants.kMaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController m_driverController = new CommandXboxController(DriveConstants.kDriverControllerPort);
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final Turret turret = new Turret(drivetrain);
@@ -76,28 +76,39 @@ public class RobotContainer {
     }
 
     private void setupSingleColorView(){
-        Color green = new Color(0, 255, 68);
-        Color white = new Color(255, 255, 255);
-        Color blue = new Color(0, 57, 162);
 
-        if (turret.isAtSetpoint() && shooter.isAtSetpoint() && joystick.rightTrigger().getAsBoolean()) { // If we're in a good shooting state, show green
-            Logger.recordOutput("SingleColorView", green.toHexString());
+        if (turret.isAtSetpoint() && shooter.isAtSetpoint() && m_driverController.rightTrigger().getAsBoolean()) { // If we're in a good shooting state, show green
+            Logger.recordOutput("SingleColorView", ColorConstants.green.toHexString());
         }else if (shiftHelpers.timeLeftInShiftSeconds(DriverStation.getMatchTime()) <= 5) { // If we're in the last 5 seconds of the shift
-            Logger.recordOutput("SingleColorView", white.toHexString());
+            Logger.recordOutput("SingleColorView", ColorConstants.white.toHexString());
         } else { // Otherwise, show blue
-            Logger.recordOutput("SingleColorView", blue.toHexString());
+            Logger.recordOutput("SingleColorView", ColorConstants.blue.toHexString());
         }
     }
 
     private void configureIdealBindings() {
+
+        m_driverController.rightTrigger()
+            .onTrue(
+                drivetrain.runOnce( ()-> {
+                    DriveConstants.kMaxSpeed = 2.0; // Meters per second - significantly reduce max speed while shooting for better accuracy
+                    DriveConstants.kMaxAngularSpeedMultiplier = DriveConstants.kMaxAngularSpeedMultiplierWhileShooting;
+                }))
+            .onFalse(
+                drivetrain.runOnce( ()-> {
+                    DriveConstants.kMaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // Back to default max speed
+                    DriveConstants.kMaxAngularSpeedMultiplier = DriveConstants.kMaxAngularSpeedMultiplierDefault; // Back to default max angular speed
+                }));
+
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-m_driverController.getLeftY() * DriveConstants.kMaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-m_driverController.getLeftX() * DriveConstants.kMaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-m_driverController.getRightX() * DriveConstants.kMaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
@@ -109,23 +120,30 @@ public class RobotContainer {
         );
 
 
-        // Reset the field-centric heading on button A press.
-        joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        // Reset the field-centric heading.
+        m_driverController.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
 
-        joystick.leftTrigger()
+        //Intake
+        m_driverController.leftTrigger()
             .onTrue(
                 intake.runOnce(()-> intake.setGoal(IntakeState.INTAKE)))
             .onFalse(
                 intake.runOnce(()-> intake.setGoal(IntakeState.STOP)));
+        
+        //Spindex
+        m_driverController.rightBumper()
+            .onTrue(
+                indexer.runOnce(()-> indexer.setGoal(IndexerState.SPINDEX))
+            ).onFalse(
+                indexer.runOnce(()-> indexer.setGoal(IndexerState.STOP)));
 
 
-
-        joystick.rightTrigger()
+        //Shooter auto-goal, with the condition that the turret is at setpoint
+        m_driverController.rightTrigger()
             .onTrue(
                 shooter.runOnce(()-> {
                     shooter.setAutoGoalEnabled(true);
-                    MaxSpeed *= 0.25; // Reduce max speed to 25% while the trigger is held for better aiming
                 }))
             .onFalse(
                 shooter.runOnce(()-> {
@@ -134,40 +152,28 @@ public class RobotContainer {
                                       })
             );
 
-        joystick.leftBumper()
+        //Outtake Intake and Indexer
+        m_driverController.leftBumper()
             .onTrue(
                 intake.runOnce(()-> {
                     intake.setGoal(IntakeState.OUTTAKE);
-                    indexer.setGoal(IndexerState.SPINDEX);
+                    indexer.setGoal(IndexerState.OUTTAKE);
                 }))
             .onFalse(
                 intake.runOnce(()-> {
                     intake.setGoal(IntakeState.STOP);
                     indexer.setGoal(IndexerState.STOP);
                 }));
+        
+        
 
-        joystick.rightBumper()
-            .onTrue(
-                indexer.runOnce(()-> indexer.setGoal(IndexerState.SPINDEX))
-            ).onFalse(
-                indexer.runOnce(()-> indexer.setGoal(IndexerState.STOP)));
-
-        // joystick.rightTrigger()
-        //     // .and(
-        //     //     ()-> shooter.isAtSetpoint())
-        //     .and(
-        //         ()-> turret.isAtSetpoint())
-
-        //     .onTrue(
-        //         indexer.runOnce(()-> indexer.setGoal(IndexerState.SPINDEX))
-        //     ).onFalse(
-        //         indexer.runOnce(()-> indexer.setGoal(IndexerState.STOP)));
-
-
-        joystick.start().onTrue(
+                
+        //Climber Extend
+        m_driverController.start().onTrue(
             climber.runOnce(()-> climber.setGoal(ClimberState.EXTEND)));
-            
-        joystick.back().onTrue(
+        
+        //Climber Retract
+        m_driverController.back().onTrue(
             climber.runOnce(()-> climber.setGoal(ClimberState.RETRACT)));
 
 
@@ -180,9 +186,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-m_driverController.getLeftY() * DriveConstants.kMaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-m_driverController.getLeftX() * DriveConstants.kMaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-m_driverController.getRightX() * DriveConstants.kMaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
@@ -193,25 +199,25 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        joystick.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        m_driverController.a().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        joystick.x()
+        m_driverController.x()
             .onTrue(turret.runOnce(() -> turret.turretTurnLeft()))
             .onFalse(turret.runOnce(() -> turret.turretStop()));
         
-        joystick.b()
+        m_driverController.b()
             .onTrue(turret.runOnce(() -> turret.turretTurnRight()))
             .onFalse(turret.runOnce(() -> turret.turretStop()));
 
-        joystick.y()
+        m_driverController.y()
             .onTrue(turret.runOnce(() -> turret.setPivotPosition(90)));
 
-        joystick.leftTrigger()
+        m_driverController.leftTrigger()
             .onTrue(intake.runOnce(() -> intake.setGoal(IntakeState.INTAKE)))
             .onFalse(intake.runOnce(() -> intake.setGoal(IntakeState.STOP)));
 
         
-        joystick.rightTrigger()
+        m_driverController.rightTrigger()
             .onTrue(shooter.runOnce
             (() -> shooter.setAutoGoalEnabled(true)))
             .onFalse(shooter.runOnce(() -> {
@@ -220,26 +226,26 @@ public class RobotContainer {
                                       })
             );
 
-        joystick.leftBumper()
+        m_driverController.leftBumper()
             .onTrue(indexer.runOnce(() -> indexer.setGoal(IndexerState.SPINDEX)))
             .onFalse(indexer.runOnce(() -> indexer.setGoal(IndexerState.STOP)));
         
-        joystick.rightBumper()
+        m_driverController.rightBumper()
             .onTrue(indexer.runOnce(() -> indexer.setGoal(IndexerState.OUTTAKE)))
             .onFalse(indexer.runOnce(() -> indexer.setGoal(IndexerState.STOP)));
     
 
-        joystick.povUp()
+        m_driverController.povUp()
             .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.EXTEND)))
             .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
 
-        joystick.povDown()
+        m_driverController.povDown()
             .onTrue(climber.runOnce(() -> climber.setGoal(ClimberState.RETRACT)))
             .onFalse(climber.runOnce(() -> climber.setGoal(ClimberState.OFF)));
 
         drivetrain.registerTelemetry(logger::telemeterize);
 
-        joystick.povLeft()
+        m_driverController.povLeft()
             .onTrue(turret.runOnce(() -> turret.zeroTuret()));
 
     }
